@@ -8,34 +8,38 @@ function App() {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    liff
-      .init({
-        liffId: import.meta.env.VITE_LIFF_ID
-      })
-      .then(() => {
+    (async () => {
+      try {
+        const liffId = import.meta.env.VITE_LIFF_ID;
+        if (!liffId) throw new Error("VITE_LIFF_ID is not set");
+
+        await liff.init({ liffId });
         setMessage("LIFF init succeeded.");
-        liff.getProfile()
-          .then((profile) => {
-            setName(profile.displayName);
-          })
-          .catch((err) => {
-            console.log("error", err);
-          });
-      })
-      .catch((e) => {
+
+        // 未ログインならログインへ（戻ってきた後に再実行される）
+        if (!liff.isLoggedIn()) {
+          liff.login(); // redirect
+          return;
+        }
+
+        // ここに来る時点で access_token があるはず
+        const profile = await liff.getProfile();
+        setName(profile.displayName);
+
+        // もしバックエンドAPIを使うなら
+        // const token = liff.getAccessToken(); // Bearer に載せる
+      } catch (e) {
         setMessage("LIFF init failed.");
-        setError(`${e}`);
-      });
-  });
+        setError(String(e?.message ?? e));
+        console.error(e);
+      }
+    })();
+  }, []); // ← 依存配列を入れて初回だけ実行
 
   return (
     <div className="App">
       {message && <p>{message}</p>}
-      {error && (
-        <p>
-          <code>{error}</code>
-        </p>
-      )}
+      {error && <p><code>{error}</code></p>}
       {name && <p>こんにちは、{name}さん</p>}
     </div>
   );
