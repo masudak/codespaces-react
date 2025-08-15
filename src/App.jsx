@@ -12,14 +12,6 @@ function App() {
       .init({
         liffId: import.meta.env.VITE_LIFF_ID
       })
-      .ready.then(() => {
-        if (liff.isLoggedIn()) {
-          const context = liff.getContext()
-          const liffToken = liff.getAccessToken()
-          setUid(context.userId)
-          setAccessToken(liffToken)
-        } 
-      })
       .then(() => {
         setMessage("LIFF init succeeded.");
         liff.getProfile()
